@@ -58,20 +58,26 @@ localparam int PROG_LEN =100;
  constraint c_opcode_range { opcode inside {[4'b0001:4'b0011], 4'b1011, 4'b1111 }; }
   
 // Comment (2b) Add Contraint 1 here: Define a constraint named unique_operands to generate different a and b values at each iteration. 
-
+ constraint unique_operands {
+    a != b || a != prev_a || b != prev_b || opcode != prev_opcode;
+ }
 
 
 
 // Comment (2c) Add Contraint 2 here: Using the implication operator ->, define a constraint named small_operands 
 // which will constrain, “If a and b are both small (<25), then the opcode is changed to ADD”.
-
+constraint small_operands {
+    (a<25 && b<25) -> (opcode == 4'b0001);
+}
 
 
 
 
 // Comment (2d) Write a soft constraint that b should be greater than a and can be overridden 
 // using inline constraint to make it a > b (See randomize() function in (2e)
-
+constraint soft_b_greater_a {
+  soft b > a;
+}
 
 
 
@@ -100,7 +106,8 @@ localparam int PROG_LEN =100;
           
             // Comment(2f) Insert code here to override the values of 'a' and 'b'
             //     by adding 1 to each (a = a+1; b = b+1); 
-		
+            a = a + 1;
+            b = b + 1;
             $display("[post_randomize] WARNING: same result repeated!");
 					// changing the values of a and b, becuase it is repeated concecutively.
 	      $display ("changing the values of a=%d and b=%d",a,b);
@@ -168,7 +175,7 @@ localparam int PROG_LEN =100;
     }
 	
 // Comment (2a) Define a cross coverage for opreand a and b here. (Hint: use a_sig,b_sig)
-
+  cross a_sig, b_sig;
 
   endgroup
 
@@ -196,7 +203,7 @@ localparam int PROG_LEN =100;
 
         // Normal randomization for first (PROG_LEN - 5) iterations
         if (i < PROG_LEN - 5) begin
-            assert(instr_obj.randomize()) // Comment (2e) Modify this statement to override 
+            assert(instr_obj.randomize() with {a > b; }) // Comment (2e) Modify this statement to override 
                                           //  soft constraint (2d) and make a > b
               else $fatal("Randomization failed!");
 
